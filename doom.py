@@ -16,7 +16,7 @@ while True:
 
   ip_header = packet[0:20]
 
-  iph = unpack(':BBHHHBBH4s4s'. ip_header)
+  iph = unpack(':BBHHHBBH4s4s', ip_header)
 
   version_ihl = iph[0]
   version = version_ihl >> 4
