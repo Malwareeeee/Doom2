@@ -97,7 +97,7 @@ def get_host():
 
 #Use this as banner and initial instructions
 def banner():
-	print(Fore.BLUE + figlet_format('EZFTP'),font='slant')
+	print(Fore.BLUE + figlet_format('EZFTP',font='slant'))
 	time.sleep(1)
 	print(Fore.WHITE + "Used For FTP Access And File Directory Access")
 
