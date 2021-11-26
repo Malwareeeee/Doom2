@@ -1,53 +1,106 @@
-#Tcp_Packet Sniffer - Project Doomsday_Wireless
-import socket 
-import sys 
-from struct import * 
-
+#EZFTP - Build {1.1} - For Raspberry Pi Portable Usage | Developed By: ss12
 try:
-  s = socket.socket( socket.AF_PACKET , socket.SOCK_RAW , socket.ntohs(0x0003))
-except socket.error as msg:
-  print('Socket could not be created, Error Code: %s ' + str(msg[0]) + ' Message ' + msg[1])
-  sys.exit()
+	import ftplib
+	import os 
+	from pyfiglet import figlet_format 
+	from datetime import datetime
+	from colorama import Fore
+	import time 
+except ImportError as err:
+	print("EZFTP | Has Detected An Error With The Following Error Code: | %s |")
+	raise Exception(
+		'Please Fix The Following | %s |'
+	)
 
-while True:
-  packet = s.recvfrom(65565)
+def get_datetime_format(date_time):
+  # convert to datetime object
+  date_time = datetime.strptime(date_time, "%Y%m%d%H%M%S")
+  # convert to human readable date time string
+  return date_time.strftime("%Y/%m/%d %H:%M:%S")
 
-  packet = packet[0]
+def get_size_format(n, suffix="B"):
+  # Converts Bytes To Scaled Format (e.g KB, MB, etc.)
+  for unit in ["", "K", "M", "G", "T", "P"]:
+    if n < 1024:
+    	return f"{n:.2f}{unit}{suffix}"
+    n /= 1024
 
-  ip_header = packet[0:20]
+#Used For A Light Weight Brute Force Attack
+def lw_brf():
+	get_quick = input(Fore.RED + "Enter FTP Host: ")
+	print(Fore.RED + 'Trying Default FTP Creds..')
+	try:
+		ftp = ftplib.FTP(get_quick,'admin','password')
+		ftp.encoding = 'utf-8'
+		print(ftp.getwelcome())
+	except Exception as err:
+		print(Fore.RED + 'Brute Force Attack Failed...')
 
-  iph = unpack(':BBHHHBBH4s4s', ip_header)
 
-  version_ihl = iph[0]
-  version = version_ihl >> 4
-  ihl = version_ihl & 0xF
+#Used For Browsing Files In Ftp Server If Creds Are Already Obtained..
+def file_browse():
+	get = input(Fore.WHITE + 'Enter FTP Host: ')
+	user = input(Fore.WHITE + 'Enter FTP User: ')
+	pass_ = input(Fore.WHITE + "Enter FTP Pass: ")
+	ftp = ftplib.FTP(get,user,pass_)
+	ftp.encoding = 'utf-8'
+	print(ftp.getwelcome())
+	ftp.cwd('pub/maps')
+	print('*'*50,'LIST','*'*50)
+	ftp.dir()
+	time.sleep(2)
+	print(Fore.WHITE + 'NLST Processing..')
+	print("*"*50, "NLST", "*"*50)
+	print("{:20} {}".format("File Name", "File Size"))
+	for file_name in ftp.nlst():
+		file_size = 'N/A'
+		try:
+			ftp.cwd(file_name)
+		except Exception as e:
+			ftp.voidcmd("TYPE I")
+			file_size = get_size_format(ftp.size(file_name))
+		print(f"{file_name:20} {file_size}")
+	time.sleep(1)
+	print(Fore.RED + 'MLSD Processing... 3rd Stage..')
+	print("*"*50, "MLSD", "*"*50)
+	# using the MLSD command
+	print("{:30} {:19} {:6} {:5} {:4} {:4} {:4} {}".format("File Name", "Last Modified", "Size",
+                                                    "Perm","Type", "GRP", "MODE", "OWNER"))
+	for file_data in ftp.mlsd():
+		file_name, meta = file_data
+		file_type = meta.get('type')
+		if file_type == 'file':
+			ftp.voidcmd('TYPE I')
+			file_size = ftp.size(file_name)
+			file_size = get_size_format(file_size)
+		else:
+			file_size = 'N/A'
+		last_modified = get_datetime_format(meta.get('modify'))
+		permission = meta.get('perm')
+		unique_id = meta.get('unique')
+		unix_group = meta.get('unix.group')
+		unix_mode = meta.get('unix.mode')
+		unix_owner = meta.get('unix.owner')
+		print(f"{file_name:30} {last_modified} {file_size:7} {permission:5} {file_type:4} {unix_group:4} {unix_mode:4} {unix_owner}")
+		print(Fore.RED + '30 Seconds Remaining View Time..')
+		time.sleep(30)
+		ftp.quit()
+		print(Fore.RED + "Connection Closed...")
 
-  iph_length = ihl * 4
-  ttl = iph[5]
-  protocol = iph[6]
-  s_addr = sockewt.inet_ntoa(ihp[8])
-  d_addr = socket.inet_ntoa(iph[9])
+def get_host():
+	time.sleep(1)
+	inp = input(Fore.WHITE + 'Select A For If Creds Are Obtained, Select B For Light Brute Force Attempt')
+	if inp == 'A':
+		file_browse()
+	if inp == 'B':
+		lw_brf()
 
-print('Version : ' + str(version) + ' IP Header Length : ' + str(ihl) + ' TTL : ' + str(ttl) + ' Protocol : ' + str(protocol) + ' Source Address : ' + str(s_addr) + ' Destination Address : ' + str(d_addr))
+#Use this as banner and initial instructions
+def banner():
+	print(Fore.BLUE + figlet_format('EZFTP'),font='slant')
+	time.sleep(1)
+	print(Fore.WHITE + "Used For FTP Access And File Directory Access")
 
-tcp_header = packet[iph_length:iph_length+20]
-	
-  #now unpack them :)
-tcph = unpack('!HHLLBBHHH' , tcp_header)
-	
-source_port = tcph[0]
-dest_port = tcph[1]
-sequence = tcph[2]
-acknowledgement = tcph[3]
-doff_reserved = tcph[4]
-tcph_length = doff_reserved >> 4
-	
-print('Source Port : ' + str(source_port) + ' Dest Port : ' + str(dest_port) + ' Sequence Number : ' + str(sequence) + ' Acknowledgement : ' + str(acknowledgement) + ' TCP header length : ' + str(tcph_length))
-
-h_size = iph_length + tcph_length * 4
-data_size = len(packet) - h_size
-	
-#get data from the packet
-data = packet[h_size:]
-	
-print('Data : ' + data)
+if __name__ == '__main__':
+	banner()
+	get_host()
